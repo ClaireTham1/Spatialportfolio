@@ -1,0 +1,347 @@
+---
+title: "Assigment 4 and 5 drft 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+options(java.parameters = "-Xmx2G")
+
+library(r5r)
+library(osmextract)
+library(tidyverse)
+library(sf)
+library(ggthemes)
+library(ggspatial)
+library(tigris)
+library(wesanderson)
+library(tidytransit)
+library(stars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+dir.create("networks")
+
+download.file("https://transitfeeds.com/p/mbta/64/latest/download", file.path("networks","CAMgtfs.zip"), mode = "wb", quiet=TRUE)
+```
+
+```{r}
+CAM_streets <- oe_read("networks/cambridge.osm.pbf", 
+                   download_directory = "networks", 
+                   layer = "lines", 
+                   quiet = TRUE)
+CAM_streets <- CAM_streets %>%
+  filter(is.na(highway))
+
+CAM_points <- oe_read("networks/cambridge.osm.pbf", 
+                   download_directory = "networks", 
+                   layer = "points", 
+                   quiet = TRUE)
+CAM_stops <- CAM_points %>%
+   filter(str_detect(other_tags, "public_transport"->"stop_position"))
+```
+
+```{r}
+MA_state_plane <- "+proj=lcc +lat_1=41.71666666666667 +lat_2=42.68333333333333 +lat_0=41 +lon_0=-71.5 +x_0=200000 +y_0=750000 +ellps=GRS80 +units=m +no_defs"
+
+CAM_city_limits <- places("Massachusetts") %>%
+  filter(NAME == "Cambridge") %>%
+  st_transform(crs = st_crs(CAM_streets))
+
+CAM_streets <- CAM_streets[CAM_city_limits,]
+CAM_points <- CAM_points[CAM_city_limits,]%>%
+  rename(id = osm_id)
+CAM_stops <- CAM_stops[CAM_city_limits,]%>%
+  rename(id = osm_id)
+
+ggplot() +
+  geom_sf(data = CAM_streets, alpha = 0.1)+
+  geom_sf(data = CAM_stops, color = "green")+
+  theme_map()+
+  coord_sf(crs = MA_state_plane)
+```
+
+
+`Loading clinic data
+```{r}
+CAM_clinic <- oe_read("networks/cambridge.osm.pbf", 
+                   provider = "bbbike", 
+                   download_directory = "networks", 
+                   layer = "points", 
+                   quiet = TRUE) %>%
+  filter(str_detect(other_tags, '"amenity"=>"clinic"')) %>%
+  st_filter(CAM_city_limits) %>%
+  rename(id = osm_id)
+
+CAM_library <- oe_read("networks/cambridge.osm.pbf", 
+                   provider = "bbbike", 
+                   download_directory = "networks", 
+                   layer = "points", 
+                   quiet = TRUE) %>%
+  filter(str_detect(other_tags, '"amenity"=>"library"')) %>%
+  st_filter(CAM_city_limits) %>%
+  rename(id = osm_id)
+
+ggplot(CAM_streets) +
+  geom_sf(color = 'gray') +
+  geom_sf(data = CAM_library, color = "red") +
+  coord_sf(crs = MA_state_plane)  +
+  theme_void()
+```
+Set up grid points
+```{r}
+grid <- st_sf(st_make_grid(CAM_city_limits, 
+                           square = FALSE, 
+                           n = c(100,100),
+                           what = "polygons")) %>%
+  st_filter(CAM_city_limits) 
+
+colnames(grid) <- "geometry"
+st_geometry(grid) <- "geometry"
+
+grid <- grid %>%
+  mutate(id = seq(1, length(grid$geometry), by=1))
+
+grid_points <- st_centroid(grid)
+
+ggplot(grid) +
+  geom_sf() +
+  geom_sf(data = CAM_library, color = "red") +
+  geom_sf(data = CAM_streets, alpha = 0.2) +
+  coord_sf(crs = MA_state_plane) + 
+  theme_map()
+```
+```{r}
+r5r_core <- setup_r5("networks", verbose = FALSE)
+```
+
+```{r}
+ttm <- travel_time_matrix(r5r_core = r5r_core,
+                          origins = CAM_library,
+                          destinations = grid_points,
+                          mode = c("WALK", "TRANSIT"),
+                          departure_datetime = as.POSIXct("15-11-2021 14:00:00",
+                                 format = "%d-%m-%Y %H:%M:%S"),
+                          max_walk_dist = 1000,
+                          max_trip_duration = 480,
+                          verbose = FALSE)
+```
+```{r}
+tt_wide <- ttm %>%
+  pivot_wider(names_from = fromId, 
+              names_prefix = "from", values_from = travel_time) %>%
+  rename(id = toId) %>% 
+  merge(grid) %>%
+  replace(is.na(.), 999) %>%
+  rowwise() %>%
+  mutate(from_any = min(c_across(starts_with("from")), na.rm = TRUE))
+
+st_geometry(tt_wide) <- "geometry"
+```
+
+```{r}
+ggplot(CAM_streets) +
+  geom_sf(data = tt_wide, 
+          aes(fill = from_any), 
+          color = NA) +
+  geom_sf(alpha = 0.5) +
+  scale_fill_gradient2(low = "green", mid = "yellow", high = "red", 
+                       midpoint = 30,
+        name = "Transit Travel\ntime to the\nnearest library\n(minutes)") +
+  coord_sf(crs = MA_state_plane) +
+  theme_map()
+```
+```{r}
+iso_pallete <- wes_palette("Zissou2", n = 5)
+
+iso10min <- tt_wide[tt_wide$from_any < 11,] %>%
+  st_union()
+
+iso20min <- tt_wide[tt_wide$from_any < 21,] %>%
+  st_union()
+
+iso30min <- tt_wide[tt_wide$from_any < 31,] %>%
+  st_union()
+
+ggplot(CAM_streets) +
+  geom_sf(data = iso30min, 
+          aes(fill = "Area within 30 minutes"), 
+          color = NA) +
+  geom_sf(data = iso20min, 
+          aes(fill = "Area within 20 minutes"), 
+          color = NA) +
+  geom_sf(data = iso10min, 
+          aes(fill = "Area within 10 minutes"), 
+          color = NA) +
+  geom_sf(alpha = 0.5) +
+  scale_fill_manual(values = c(iso_pallete[1], 
+                               iso_pallete[3],
+                               iso_pallete[5]),
+        name = "Transit Travel\ntime to the\nnearest library\n(minutes)") +
+  coord_sf(crs = MA_state_plane) +
+  theme_map()
+```
+```{r}
+CAM_transit <- read_gtfs(file.path("networks", "CAMgtfs.zip"))
+
+CAM_transit_stops <- st_as_sf(CAM_transit$stops %>% drop_na(c("stop_lat", "stop_lon")), 
+                          coords = c("stop_lat","stop_lon"),
+                          crs =st_crs(grid))
+                      
+```
+
+```{r}
+rlang::last_error()
+rlang::last_trace()
+transit_grid <- grid %>%
+  mutate(num_stops = lengths(st_covers(grid, CAM_stops)))
+
+transit_points <- st_centroid(transit_grid)
+
+ggplot(transit_points) +
+  geom_sf(aes(color = as.character(num_stops))) +
+  scale_color_manual(values = c("gray", "cornsilk", "lightgreen", "blue", "purple"), 
+                    name = "Number of\ntransit stops") +
+  theme_void()
+```
+```{r}
+transit_access <- accessibility(r5r_core,
+                        origins = transit_points,
+                        destinations = transit_points,
+                        mode = "WALK",
+                        opportunities_colname = "num_stops",
+                        decay_function = "step",
+                        cutoffs = 11,
+                        departure_datetime = as.POSIXct("15-11-2021 14:00:00",
+                                 format = "%d-%m-%Y %H:%M:%S"),
+                        max_walk_dist = 500,
+                        time_window = 60,
+                        percentiles = 50,
+                        verbose = FALSE) %>%
+  mutate(id = as.numeric(from_id)) %>%
+  merge(grid)
+
+st_geometry(transit_access) <- "geometry"
+
+ggplot(transit_access) +
+  geom_sf(aes(fill = accessibility), color = NA) +
+  scale_fill_viridis_c(name = "Transit stops\nwithin 10-minutes\nwalk") +
+  coord_sf(crs = MA_state_plane) +
+  theme_void()
+```
+```{r}
+transit_access2 <- accessibility(r5r_core,
+                        origins = transit_points,
+                        destinations = transit_points,
+                        mode = "WALK",
+                        opportunities_colname = "num_stops",
+                        decay_function = "exponential",
+                        cutoffs = 5,
+                        departure_datetime = as.POSIXct("15-11-2021 14:00:00",
+                                 format = "%d-%m-%Y %H:%M:%S"),
+                        max_walk_dist = 500,
+                        time_window = 60,
+                        percentiles = 50,
+                        verbose = FALSE) %>%
+  mutate(id = as.numeric(from_id)) %>%
+  merge(grid)
+
+st_geometry(transit_access2) <- "geometry"
+
+ggplot(transit_access2) +
+  geom_sf(aes(fill = accessibility), color = NA) +
+  scale_fill_viridis_c(name = "Accessiblity score") +
+  coord_sf(crs = MA_state_plane) +
+  theme_void()
+```
+
+```{r}
+stop_r5(r5r_core)
+```
+
+```{r}
+rJava::.jgc(R.gc = TRUE)
+```
+
+```{r}
+st_write(transit_access2, 'CAM_access.geojson', append=FALSE, quiet=TRUE )
+```
+
+```{r}
+access_poly <- st_read("CAM_access.geojson", quiet=TRUE)
+
+access_raster <- st_rasterize(access_poly["accessibility"], 
+                              nx = 100, ny = 100) 
+plot(access_raster)
+```
+```{r}
+CAM_city_limits <- places("Massachusetts") %>%
+  filter(NAME == "Cambridge") 
+
+CAM_file <- oe_match("Cambridge", quiet = TRUE)
+
+CAM_streets <- oe_read("networks/cambridge.osm.pbf", 
+                   download_directory = "networks", 
+                   layer = "lines", 
+                   quiet = TRUE) %>%
+  filter(!is.na(highway)) %>%
+  st_transform(crs = st_crs(CAM_city_limits)) %>%
+  st_filter(CAM_city_limits)
+
+ggplot(CAM_streets) +
+  geom_stars(data = access_raster) +
+  geom_sf(color = "white", alpha = 0.2) +
+  scale_fill_viridis_c(na.value = NA, 
+                       option="A",
+                       name = "Pedestrian access to\ntransit stops") +
+  theme_void()
+```
+
+```{r}
+access_points <- st_as_sf(access_raster, as_points = TRUE)
+
+ggplot(CAM_streets) +
+  geom_sf(data = access_points, aes(color = accessibility), size = 0.1) +
+  scale_color_viridis_c(na.value = NA, 
+                       option="A",
+                       name = "Pedestrian access to\ntransit stops") +
+  theme_void()
+```
+```{r}
+access_poly2 <- st_as_sf(access_raster, as_points = FALSE, merge = TRUE)
+
+ggplot(CAM_streets) +
+  geom_sf(data = access_poly2, aes(fill = accessibility), color = 'gray') +
+  scale_fill_viridis_c(na.value = NA, 
+                       option="A",
+                       name = "Pedestrian access to\ntransit stops") +
+  theme_void()
+```
+
+```{r}
+access_contours <- st_contour(access_raster, contour_lines = TRUE, 
+                              breaks = c(0,2,4,6,8))
+
+ggplot(CAM_streets) +
+  geom_sf(color = "gray") +
+  geom_sf(data = access_contours, aes(color = accessibility), fill = NA) +
+  scale_color_viridis_c(na.value = NA, 
+                       option="A",
+                       breaks = c(0,2,4,6,8),
+                       name = "Pedestrian access to\ntransit stops") +
+  theme_void()
+```
+
