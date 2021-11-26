@@ -165,7 +165,7 @@ ggplot(CAM_streets) +
   theme_map()
 ```
 ```{r}
-iso_pallete <- wes_palette("Zissou2", n = 5)
+iso_pallete <- wes_palette("Zissou1", n = 5)
 
 iso10min <- tt_wide[tt_wide$from_any < 11,] %>%
   st_union()
@@ -204,8 +204,7 @@ CAM_transit_stops <- st_as_sf(CAM_transit$stops %>% drop_na(c("stop_lat", "stop_
 ```
 
 ```{r}
-rlang::last_error()
-rlang::last_trace()
+
 transit_grid <- grid %>%
   mutate(num_stops = lengths(st_covers(grid, CAM_stops)))
 

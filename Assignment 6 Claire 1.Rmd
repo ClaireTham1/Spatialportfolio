@@ -1,0 +1,104 @@
+---
+title: "Assignment 6 Claire 1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(leaflet)
+library(sf)
+library(tidyverse)
+library(tidycensus)
+library(ggthemes)
+library(ggspatial)
+library(htmlwidgets)
+library(tidytransit)
+```
+
+```{r}
+census_api_key("c1d01ba587d3b71212d6431e6568b69681f35baf", install=TRUE, overwrite=TRUE)
+
+readRenviron("~/.Renviron")
+```
+# I'm interested in total owenr with (H017002) and the young owner population (H017D004)
+```{r}
+Suffolk_Youngowner <- get_decennial(geography = "block",
+                          state = "MA", county = "Suffolk",
+                          year = 2010,
+                          output = "wide",
+                          variables = c(tot_owner = 'H017002',
+                                        young_owner = 'H017D004'),
+                          geometry = TRUE)
+```
+```{r}
+Suffolk_Youngowner <- Suffolk_Youngowner %>%
+  mutate(pct_youngowner = young_owner / tot_owner) %>%
+  filter(tot_owner > 0)
+```
+
+```{r}
+MA_state_plane <- "+proj=lcc +lat_1=42.68333333333333 +lat_2=41.71666666666667 +lat_0=41 +lon_0=-71.5 +x_0=200000.0001016002 +y_0=750000 +ellps=GRS80 +datum=NAD83 +to_meter=0.3048006096012192 +no_defs"
+
+ggplot(Suffolk_Youngowner) +
+  annotation_map_tile(zoomin = 0, progress = "none", type = "stamenbw") +
+  geom_sf(color = NA, aes(fill = pct_youngowner), alpha = 0.7) +
+  coord_sf(crs = MA_state_plane) +
+  scale_fill_continuous(low="cornsilk", high="darkgreen", 
+                       na.value=NA,
+                       name = "Percent of homeowners who are aged 25-34",
+                       breaks = c(0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1),
+                       labels = c("0", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%" , "100%")) +
+  theme_void() 
+
+
+```
+
+
+```{r}
+MA_Youngowners_palette <- colorNumeric(c("cornsilk", "darkgreen"), Suffolk_Youngowner$pct_youngowner)
+
+Youngowner_map1 <- leaflet(Suffolk_Youngowner) %>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  addPolygons(stroke = FALSE, fillOpacity = 0.7,
+    color = ~MA_Youngowners_palette(pct_youngowner)) %>%
+  addLegend("bottomright", pal = MA_Youngowners_palette, values = ~pct_youngowner,
+    title = "Percent of home owners who are ages 24-35 ",
+    labFormat = labelFormat(suffix = "%",
+                            transform = function(x) 100 * x),
+    opacity = 1)
+
+Youngowner_map1
+```
+```{r}
+png("youngowner_map1", width = 5, height = 3, units = "in", res = 300)
+Youngowner_map1
+dev.off()
+```
+```{r}
+pdf("youngownerpdf", width = 5, height = 3)
+Youngowner_map1
+dev.off()
+```
+
+
+```{r}
+Youngownermap <- leaflet(Suffolk_Youngowner) %>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  addPolygons(color = ~MA_Youngowners_palette(pct_youngowner), stroke = FALSE, fillOpacity = 0.7,
+              highlightOptions = highlightOptions(fillColor = "darkorange", fillOpacity = 0.9),
+              label = Suffolk_Youngowner$NAME,
+              popup = paste("Total homeowners: ", Suffolk_Youngowner$tot_owner, "<br/>",
+                            "Owners aged 24-35: ", Suffolk_Youngowner$young_owner, " (", 
+                            round(Suffolk_Youngowner$pct_youngowner * 100, 1), "%)", sep = "")) %>%
+    addLegend("bottomright", pal = MA_Youngowners_palette, values = ~pct_youngowner,
+    title = "Percent of home owners who are aged 24-35",
+    labFormat = labelFormat(suffix = "%",
+                            transform = function(x) 100 * x),
+    opacity = 1)
+
+Youngownermap
+```
+```{r}
+saveWidget(Youngownermap, file="inter_youngowner.html")
+```
+
