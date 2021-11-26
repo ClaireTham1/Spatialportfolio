@@ -1,7 +1,7 @@
 ---
 title: "Example Portfolio"
-author: "Carole Voulgaris"
-date: "10/12/2021"
+author: "Claire Tham"
+date: "11/16/2021"
 output: 
   rmdformats::material
 ---
@@ -12,13 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-This is an example of a portfolio that someone might assemble to demonstrate the skills they have developed in VIS 2128. I have created this page using RMarkdown. There are fancier tools out there for creating and hosting webpages, and you are welcome to use any of those if you like. The advantage of this approach is that you can create your webpage directly from RStudio.
-
-This example uses the `material` theme, which is available if you install the `rmdformats` package. The themes in the `rmdformats` have a table of contents that only includes level-one headings.
-
-Other themes in the `rmdformats` package are `downcute`, `html_clean`, `html_docco`, `readthedown`, and `robobook`.  
-
-Your portfolio should demonstrate each of the following skills (not all of which are demonstrated in this example):
+I am creating a portfolio learnt from skillsets in VIS 2128. I am using the materials theme and I am trying to display the following skillsets
 
 * Displaying multiple vector layers on the same map
 * Calculating and displaying relationships among point and polygon layers based on distance
@@ -29,8 +23,12 @@ Your portfolio should demonstrate each of the following skills (not all of which
 * Georeferencing a raster image
 * Displaying data on an interactive map
 
-# Maps of Boston
-Here are two maps of Boston. I might include some text here about this set of maps.
+# Georeferencing
+In this map, I tried to georeference a historical map of Hawaii, Honalulu in relation to the current day green spaces and police stations. This was because I wanted to understand the general safety levels of Honalulu, since it was a booming tourist spot.There were only 3 police stations and 91 green spaces.
+
+[![](thumbnails/georeference.PNG)](https://c-voulgaris.github.io/portfolio_examples/fullsize/clockboard.pdf){target="_blank"}
+
+
 
 ## Interactive Map
 This interactive map demonstrates the following skills: 
