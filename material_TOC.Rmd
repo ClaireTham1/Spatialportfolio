@@ -31,12 +31,12 @@ In this map, I tried to georeference a historical map of Hawaii, Honalulu in rel
 #Maps of Cambridge
 
 ## Isochrones
-This map shows isochrones based on transit travel times to the nearest school. It demonstrates the following skills:
+This map shows isochrones based on transit travel times to the nearest library. It demonstrates the following skills:
 
 * Displaying multiple vector layers on the same map
 * Calculating and displaying accessibility, based on travel time
 
-[![](thumbnails/SLO_isochrone.png)](https://c-voulgaris.github.io/portfolio_examples/fullsize/SLO_schools.pdf){target="_blank"}
+[![](thumbnails/isochrones.png)](https://clairetham1.github.io/Spatialportfolio//fullsize/isochrones.pdf){target="_blank"}
 
 ## Accessibility
 This map shows accessibility based on a distance-decay function of the walking time to the nearest transit stop. It demonstrates the following skills:
@@ -52,7 +52,7 @@ This interactive map demonstrates the following skills:
 
 * Displaying data on an interactive map
 
-[![](thumbnails/Boston_interactive.png)](https://clairetham1.github.io/Spatialportfolio//fullsize/georef2){target="_blank"}
+[![](thumbnails/interactivemaplabels.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_youngowner.html){target="_blank"}
 
 ## Clockboard Map
 This map demonstrates the following skills:
@@ -61,7 +61,7 @@ This map demonstrates the following skills:
 
 [![](thumbnails/clockboard.jpg)](https://c-voulgaris.github.io/portfolio_examples/fullsize/clockboard.pdf){target="_blank"}
 
-# Maps of San Luis Obispo
+# Maps of Cambridge, Boston
 Here are two maps of San Luis Obispo, California. I might include some text here as well.
 
 ## Isochrones
