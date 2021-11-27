@@ -1,0 +1,162 @@
+---
+title: Assignment 3
+output: html_document
+---
+
+```{r, include=FALSE}
+#Loading Libraries
+
+library(sf)
+library(tidyverse)
+library(ggthemes)
+library(ggspatial)
+library(units)
+library(nngeo)
+library(magrittr) 
+
+```
+
+```{r}
+#Loading Data
+
+nbhoods <- st_read("https://data.sfgov.org/api/geospatial/pty2-tcw4?method=export&format=GeoJSON" , quiet = TRUE)
+
+bikenetwork <- st_read("https://data.sfgov.org/api/geospatial/msjm-67c8?method=export&format=GeoJSON", quiet = TRUE)
+
+greenroofs <- st_read("https://data.sfgov.org/api/geospatial/x83m-rafs?method=export&format=GeoJSON" , quiet = TRUE)
+
+parks <- st_read("https://data.sfgov.org/api/geospatial/42rw-e7xk?method=export&format=GeoJSON", quiet = TRUE)
+
+trees <- read.csv(file = 'Street_Tree_List.csv')
+
+```
+
+```{r}
+ca_state_plane <- "+proj=lcc +lat_1=40 +lat_2=41.66666666666666 +lat_0=39.33333333333334 +lon_0=-122 +x_0=2000000 +y_0=500000.0000000002 +ellps=GRS80 +datum=NAD83 +to_meter=0.3048006096012192 +no_defs "
+
+nbhoods <- nbhoods %>%
+  st_transform(ca_state_plane)
+
+bikenetwork <- bikenetwork %>%
+  st_transform(ca_state_plane)
+
+greenroofs <- greenroofs %>%
+  st_transform(ca_state_plane)
+
+parks <- parks %>%
+  st_transform(ca_state_plane) %>%
+filter(map_park_n != "Camp Mather")
+
+```
+
+```{r}
+#Converting CSV Coordinate System
+
+trees_csv <- read.csv(file = "https://data.sfgov.org/api/views/tkzw-k3nq/rows.csv?accessType=DOWNLOAD")
+
+trees_csv <- trees_csv %>%
+  drop_na(c("Latitude", "Longitude")) ##this drops all the NA values in the Latitude and Longitude columns
+
+trees_sf <- st_as_sf(trees_csv, coords = c("Longitude", "Latitude"),
+                     crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs") %>% ## this converts the csv into an sf object that transforms the lat/lon into spatial data using WGS84 coordinate reference system
+  
+  st_transform(ca_state_plane) ## project it onto the state plane
+```
+
+```{r}
+#Subsetting
+
+trees_inside <- trees_sf[nbhoods,]
+parks_inside <- parks[nbhoods,]
+```
+
+```{r}
+#Plotting All Data
+
+ggplot(nbhoods) +
+  geom_sf(fill = NA, color = "gray") +
+  geom_sf(data = trees_inside , size = 0.01, alpha = 0.01) +
+  geom_sf(data = greenroofs, size = 0.01) +
+  geom_sf(data= parks_inside, fill = "black", color = NA, alpha = 0.5) +
+  geom_sf(data= bikenetwork, fill = NA, color = "orange", size = 0.1) +
+  theme_map() +
+  annotation_scale()
+```
+
+```{r}
+bike_buffer <- st_buffer(bikenetwork, dist = 100) %>%
+  st_union()
+
+ggplot(bike_buffer) +
+  geom_sf ()
+```
+```{r}
+#Subsetting
+trees_inside_bike <- trees_inside[bike_buffer,]
+  
+ggplot(bike_buffer) +
+  geom_sf() +
+  geom_sf(data = trees_inside_bike, 
+          color = "darkgreen", 
+          size = 0.01) +
+  theme_map()
+```
+```{r}
+trees_inside <- trees_inside %>%
+  st_join(trees_inside_bike)%>%
+  mutate(by_bike = !is.na(XCoord.y))
+
+n_bike_trees_inside <- sum(trees_inside$by_bike)
+n_bike_trees_inside
+```
+
+```{r}
+pct_bike_trees_inside <- n_bike_trees_inside/nrow(trees_inside)
+pct_bike_trees_inside
+```
+```{r}
+left_side  <- st_bbox(trees_inside)$xmin
+top_side <- st_bbox(trees_inside)$ymax
+
+neighborhoods <- ggplot(nbhoods) +
+  geom_sf(fill = NA , color = 'black') +
+  geom_sf(data = trees_inside, size = 0.02,
+          aes(color = by_bike)) +
+  scale_color_manual(values = c("lightgreen", "darkgreen"),
+          name = "SF Trees\nby distance to a bike station", 
+          labels = c("No Tree within 100 m",
+                     "Tree within 100 m")) +
+  annotation_scale(location = "br") +
+  annotation_north_arrow(location = "tr",
+                         style = north_arrow_minimal()) +
+  annotate(geom = "text", x = left_side, 
+           y = top_side + 5000, 
+           label = paste("Of the 50000 ",
+                         " trees in SF ", 
+                          prettyNum(n_bike_trees_inside, big.mark = ","),
+                         " (", 
+                         prettyNum(100*pct_bike_trees_inside, digits = 0),
+                         "%) are within 100\nmeters of a parking meter.",
+                         sep = ""),
+           hjust = 0, vjust = 0, size = 3) +
+  theme_map() +
+  theme(panel.background = element_rect(fill = "cornsilk1"),
+        legend.background = element_rect(fill = alpha("white", 0.5), 
+                                         color = "gray"))
+
+neighborhoods
+```
+
+```{r}
+pdf("neighborhoods.pdf", width = 5, height = 3)
+neighborhoods
+dev.off()
+```
+
+```{r}
+
+```png("neighborhoods.png", width = 5, height = 3, units = "in", res = 300)
+accessibilitymap
+neighborhoods
+dev.off()
+
