@@ -20,6 +20,7 @@ census_api_key("c1d01ba587d3b71212d6431e6568b69681f35baf", install=TRUE, overwri
 
 readRenviron("~/.Renviron")
 ```
+
 # I'm interested in total owenr with (H017002) and the young owner population (H017D004)
 ```{r}
 Suffolk_Youngowner <- get_decennial(geography = "block",
@@ -100,5 +101,116 @@ Youngownermap
 ```
 ```{r}
 saveWidget(Youngownermap, file="inter_youngowner.html")
+```
+
+```{r}
+png("youngownerlabels.png", width = 5, height = 3, units = "in", res = 300)
+Youngownermap
+dev.off()
+```
+
+```{r}
+acs_vars <- load_variables(2017, "acs5")
+```
+
+
+```{r}
+transit_Suffolk <- get_acs(geography = "tract", county = "Suffolk", state = "MA", 
+                           year = 2019, survey = "acs5",
+                           variables = c(tot_wrkrs = "B08301_001", pt_wrkrs = "B08301_021"),
+                           output = "wide", geometry = TRUE) 
+```
+
+```{r}
+transit_Suffolk <- transit_Suffolk %>%
+  select(-tot_wrkrsM, -pt_wrkrsM) %>%
+  filter(tot_wrkrsE > 0) %>%
+  mutate(pct_transit = round(100 * pt_wrkrsE / tot_wrkrsE, 1))
+```
+
+```{r}
+transit_palette <- colorNumeric(c("green", "blue"),
+                                transit_Suffolk$pct_transit)
+
+transit_map <- leaflet(transit_Suffolk) %>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  addPolygons(fillColor = ~transit_palette(pct_transit), weight = 1, color = "gray", fillOpacity = 0.7,
+              highlightOptions = highlightOptions(fillColor = "yellow", fillOpacity = 0.9),
+              label = transit_Suffolk$NAME,
+              popup = paste("Total workers: ", transit_Suffolk$tot_wrkrsE, "<br/>",
+                            "Work from home: ", transit_Suffolk$pt_wrkrsE, " (", 
+                            transit_Suffolk$pct_transit, "%)", sep = "")) %>%
+    addLegend("bottomright", pal = transit_palette, values = ~pct_transit,
+    title = "Percent of workers<br/>work from home",
+    labFormat = labelFormat(suffix = "%"),
+    opacity = 1)
+
+transit_map
+```
+
+```{r}
+MBTA_url <- feedlist[feedlist$t == "MBTA GTFS",]$url_d
+
+MBTA <- read_gtfs(MBTA_url)
+
+transit_stops <- MBTA$stops
+
+transit_stations <- transit_stops %>%
+  filter(location_type == 1)
+```
+
+```{r}
+station_sf <- st_as_sf(transit_stations, 
+                          coords = c("stop_lon", "stop_lat"), 
+                          crs = "WGS84")
+```
+
+```{r}
+st_write(station_sf, "MBTA_stations.csv", layer_options = "GEOMETRY=AS_XY", append = FALSE)
+
+stations_2 <- read_csv("MBTA_stations.csv")
+```
+
+```{r}
+transit_map2 <- transit_map %>%
+  addMarkers(lng = transit_stations$stop_lon,
+             lat = transit_stations$stop_lat,
+             popup = transit_stations$stop_name)
+
+transit_map2
+```
+
+```{r}
+limits <- st_bbox(transit_Suffolk)
+
+transit_map3 <- transit_map2 %>%
+   fitBounds( lng1 = as.numeric(limits[1]),
+                lat1 = as.numeric(limits[2]),
+                lng2 = as.numeric(limits[3]),
+                lat2 = as.numeric(limits[4])) %>%
+   setMaxBounds( lng1 = as.numeric(limits[1]),
+                lat1 = as.numeric(limits[2]),
+                lng2 = as.numeric(limits[3]),
+                lat2 = as.numeric(limits[4])) 
+
+transit_map3
+```
+
+```{r}
+transit_map4 <- transit_map %>%
+  addCircleMarkers(stroke = FALSE, color = "pink", fillOpacity = 1, radius = 2,
+                   lng = transit_stations$stop_lon,
+                   lat = transit_stations$stop_lat,
+                   popup = transit_stations$stop_name) %>%
+   fitBounds( lng1 = as.numeric(limits[1]),
+                lat1 = as.numeric(limits[2]),
+                lng2 = as.numeric(limits[3]),
+                lat2 = as.numeric(limits[4])) %>%
+   setMaxBounds( lng1 = as.numeric(limits[1]),
+                lat1 = as.numeric(limits[2]),
+                lng2 = as.numeric(limits[3]),
+                lat2 = as.numeric(limits[4])) 
+
+transit_map4
 ```
 

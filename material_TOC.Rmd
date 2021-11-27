@@ -58,7 +58,7 @@ This interactive map demonstrates the following skills:
 
 [![](thumbnails/interactivemaplabels.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_youngowner.html){target="_blank"}
 
-
+[![](thumbnails/interactivemaplabels.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_youngowner.html){target="_blank"}
 
 ## Clockboard Map
 This map demonstrates the following skills:
