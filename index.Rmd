@@ -3,8 +3,10 @@ title: "Claire Tham VIS2128 Portfolio"
 author: "Claire Tham"
 date: "11/16/2021"
 output: 
-  rmdformats::material
+  prettydoc::html_pretty:
+    theme: architect
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -58,6 +60,8 @@ This interactive map demonstrates the following skills:
 
 * Displaying data on an interactive map
 
-[![](thumbnails/interactivemaplabels.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_youngowner.html){target="_blank"}
+[![](thumbnails/interactivemaplabels.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_black.html){target="_blank"}
+
+[![](thumbnails/workfromhome.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_transit4.html){target="_blank"}
 
 

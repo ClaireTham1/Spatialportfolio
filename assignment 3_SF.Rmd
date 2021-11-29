@@ -152,11 +152,10 @@ pdf("neighborhoods.pdf", width = 5, height = 3)
 neighborhoods
 dev.off()
 ```
-
 ```{r}
-
-```png("neighborhoods.png", width = 5, height = 3, units = "in", res = 300)
+png("neighborhoods.png", width = 5, height = 3, units = "in", res = 300)
 accessibilitymap
 neighborhoods
 dev.off()
+```
 

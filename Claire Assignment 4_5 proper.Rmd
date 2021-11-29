@@ -176,7 +176,7 @@ iso20min <- tt_wide[tt_wide$from_any < 21,] %>%
 iso30min <- tt_wide[tt_wide$from_any < 31,] %>%
   st_union()
 
-ggplot(CAM_streets) +
+isochrones <- ggplot(CAM_streets) +
   geom_sf(data = iso30min, 
           aes(fill = "Area within 30 minutes"), 
           color = NA) +
@@ -193,7 +193,22 @@ ggplot(CAM_streets) +
         name = "Transit Travel\ntime to the\nnearest library\n(minutes)") +
   coord_sf(crs = MA_state_plane) +
   theme_map()
+
+isochrones
 ```
+
+```{r}
+pdf("isochrones.pdf", width = 5, height = 3)
+isochrones
+dev.off()
+```
+```{r}
+png("isochrones.png", width = 5, height = 3, units = "in", res = 300)
+isochrones
+dev.off()
+```
+
+
 ```{r}
 CAM_transit <- read_gtfs(file.path("networks", "CAMgtfs.zip"))
 
@@ -300,14 +315,28 @@ CAM_streets <- oe_read("networks/cambridge.osm.pbf",
   st_transform(crs = st_crs(CAM_city_limits)) %>%
   st_filter(CAM_city_limits)
 
-ggplot(CAM_streets) +
+accessibilitymap <- ggplot(CAM_streets) +
   geom_stars(data = access_raster) +
   geom_sf(color = "white", alpha = 0.2) +
   scale_fill_viridis_c(na.value = NA, 
                        option="A",
                        name = "Pedestrian access to\ntransit stops") +
   theme_void()
+
+accessibilitymap_plot
 ```
+```{r}
+pdf("cAM_street.pdf", width = 5, height = 3)
+accessibilitymap
+dev.off()
+```
+
+```{r}
+png("Cam_street.png", width = 5, height = 3, units = "in", res = 300)
+accessibilitymap
+dev.off()
+```
+
 
 ```{r}
 access_points <- st_as_sf(access_raster, as_points = TRUE)

@@ -214,3 +214,13 @@ transit_map4 <- transit_map %>%
 transit_map4
 ```
 
+```{r}
+saveWidget(transit_map4, file="inter_transit4.html")
+```
+
+```{r}
+png("transit4.png", width = 5, height = 3, units = "in", res = 300)
+transit_map4
+dev.off()
+```
+
