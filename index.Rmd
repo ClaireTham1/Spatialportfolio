@@ -60,7 +60,7 @@ This interactive map demonstrates the following skills:
 
 * Displaying data on an interactive map
 
-[![](thumbnails/interactivemaplabels.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_black.html){target="_blank"}
+[![](thumbnails/interactivemaplabels.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_youngowner.html){target="_blank"}
 
 [![](thumbnails/workfromhome.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_transit4.html){target="_blank"}
 
