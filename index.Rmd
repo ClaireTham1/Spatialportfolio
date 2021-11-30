@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-I am creating a portfolio learnt from skillsets in VIS 2128. I am using the materials theme and I am trying to display the following skillsets
+I am creating a portfolio learnt from skillsets in VIS 2128. I am using the Architect theme and I am trying to display the following skillsets
 
 * Displaying multiple vector layers on the same map
 * Calculating and displaying relationships among point and polygon layers based on distance
@@ -36,7 +36,18 @@ It demonstrates the following skills:
 
 [![](thumbnails/georeference.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/georef2){target="_blank"}
 
-#Maps of Cambridge
+## Map of San Francisco
+
+In this map, I tried to find out the relationship of trees to parking stations in San Francisco.
+
+It demonstrates the following skills:
+
+*Calculating and displaying relationships among point and polygon layers based on distance
+
+[![](thumbnails/neighborhoods.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/neighborhoods.pdf){target="_blank"}
+
+
+## Maps of Cambridge
 
 ## Isochrones
 This map shows isochrones based on transit travel times to the nearest library. It demonstrates the following skills:
@@ -60,7 +71,13 @@ This interactive map demonstrates the following skills:
 
 * Displaying data on an interactive map
 
+I wanted to find out how many millennials (aged 24-35) owned homes in Boston. I was interested in this because of there were multiple newpaper and trending social media remarks highlighting it was difficult for youths to afford housing in Boston, due to stagnating wages and the lack of affordable housing. I decided to map this spatially. I could have improved on the map by introducing another layer of information on the income of millennials in order to gain more understanding on why there were very little millennials who owned houses.
+
 [![](thumbnails/interactivemaplabels.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_youngowner.html){target="_blank"}
+
+At the back of the Covid-19 pandemic, I was interested to see how many people worked from home and how this was concentrated in locations spatially. I used ACS data and also utilised GTFS code to map out the transit stops to see if there was a relationship between transit stops and the work from home phenomenom. I was unable to find any spatial relationship, but nonetheless, found out that there was a work from home cluster around Fenway and East Fern Street.
+
+I could have improved the map by introducing another layer of information on the income earned or the type of jobs people in such areas work in order to derive a more complete picture of why work from home clusters formed in those vicinities.
 
 [![](thumbnails/workfromhome.PNG)](https://clairetham1.github.io/Spatialportfolio//fullsize/inter_transit4.html){target="_blank"}
 
